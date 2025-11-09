@@ -1,0 +1,29 @@
+---
+- name: Install and configure Apache on Oracle Linux
+  hosts: all
+  become: yes  # Run tasks with sudo privileges
+
+  tasks:
+    - name: Install httpd package
+      ansible.builtin.dnf:
+        name: httpd
+        state: present
+
+    - name: Start and enable httpd service
+      ansible.builtin.service:
+        name: httpd
+        state: started
+        enabled: yes
+
+    - name: Ensure firewalld allows HTTP traffic (optional, if firewalld is active)
+      ansible.posix.firewalld:
+        service: http
+        permanent: true
+        state: enabled
+      notify: Reload firewalld
+
+  handlers:
+    - name: Reload firewalld
+      ansible.builtin.service:
+        name: firewalld
+        state: reloaded
