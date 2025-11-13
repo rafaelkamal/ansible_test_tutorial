@@ -27,3 +27,13 @@
       ansible.builtin.service:
         name: firewalld
         state: reloaded
+
+- name: Instll update packages
+  hosts: web_servers
+  become: yes
+
+  tasks: 
+    - name: Install updates 
+      ansible.builtin.dnf:
+        update_only: yes
+        update_cache: yes

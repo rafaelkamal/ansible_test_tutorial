@@ -1,3 +1,6 @@
+[web_servers]
 user1@192.168.220.131
+[db_servers]
 user2@192.168.220.132
+[file_servers]
 user3@192.168.220.133
