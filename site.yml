@@ -1,0 +1,112 @@
+---
+- name: Install and configure Apache on Oracle Linux
+  hosts: all
+  become: yes  # Run tasks with sudo privileges
+
+  pre_tasks:
+    - name: Install httpd package
+      tags: httpd
+      ansible.builtin.dnf:
+        name: httpd
+        state: present
+
+    - name: Start and enable httpd service
+      tags: httpd
+      ansible.builtin.service:
+        name: httpd
+        state: started
+        enabled: yes
+
+    - name: Ensure firewalld allows HTTP traffic (optional, if firewalld is active)
+      tags: always
+      ansible.posix.firewalld:
+        service: http
+        permanent: true
+        state: enabled
+      notify: Reload firewalld
+
+  handlers:
+    - name: Reload firewalld
+      tags: always
+      ansible.builtin.service:
+        name: firewalld
+        state: reloaded
+
+- hosts: web_servers
+  become: yes
+
+  tasks: 
+    - name: Install updates
+      tags: always
+      ansible.builtin.dnf:
+        update_only: yes
+        update_cache: yes
+
+    - name: Install mariadb package
+      tags: db,mariadb
+      ansible.builtin.dnf:
+        name: mariadb-server
+        state: latest
+
+    - name: Reload systemd daemon
+      tags: always
+      ansible.builtin.systemd_service:
+        daemon_reload: yes
+
+    - name: Start and enable MariaDB service
+      tags: db,mariadb
+      ansible.builtin.systemd_service:
+        name: mariadb.service
+        state: started
+        enabled: yes
+
+- hosts: db_servers
+  become: yes
+
+  tasks:
+    - name: Install Samba package
+      tags: samba
+      ansible.builtin.dnf:
+        name: 
+          - samba
+          - samba-common
+          - samba-client
+        state: present
+        update_cache: yes
+
+    - name: Reload systemd daemon
+      tags: always
+      ansible.builtin.systemd_service:
+        daemon_reload: yes
+
+    - name: Start and enable samba service
+      tags: samba
+      ansible.builtin.systemd_service:
+        name: samba-bgqd.service
+        state: started
+        enabled: yes
+
+- hosts: file_servers
+  become: yes
+
+  tasks:
+    - name: Ensure unzip is installed (required for unzipping terraform)
+      ansible.builtin.dnf:
+        name: unzip
+        state: present
+
+    - name: Download terraform archive
+      ansible.builtin.get_url:
+        url: https://releases.hashicorp.com/terraform/1.13.5/terraform_1.13.5_linux_amd64.zip
+        dest: /tmp/terraform_linux_amd64.zip
+        validate_certs: no #use with caution in production
+        mode: 0644
+
+    - name: unzip terraform archive
+      unarchive:
+        src: /tmp/terraform_linux_amd64.zip
+        dest: /usr/local/bin/
+        remote_src: yes
+        mode: 0755
+        owner: root
+        group: root
