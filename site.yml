@@ -5,20 +5,17 @@
 
   pre_tasks:
     - name: Install httpd package
-      tags: httpd
       ansible.builtin.dnf:
         name: httpd
         state: present
 
     - name: Start and enable httpd service
-      tags: httpd
       ansible.builtin.service:
         name: httpd
         state: started
         enabled: yes
 
     - name: Ensure firewalld allows HTTP traffic (optional, if firewalld is active)
-      tags: always
       ansible.posix.firewalld:
         service: http
         permanent: true
@@ -27,7 +24,6 @@
 
   handlers:
     - name: Reload firewalld
-      tags: always
       ansible.builtin.service:
         name: firewalld
         state: reloaded
@@ -37,35 +33,47 @@
 
   tasks: 
     - name: Install updates
-      tags: always
       ansible.builtin.dnf:
         update_only: yes
         update_cache: yes
 
     - name: Install mariadb package
-      tags: db,mariadb
       ansible.builtin.dnf:
         name: mariadb-server
         state: latest
 
     - name: Reload systemd daemon
-      tags: always
       ansible.builtin.systemd_service:
         daemon_reload: yes
 
     - name: Start and enable MariaDB service
-      tags: db,mariadb
       ansible.builtin.systemd_service:
         name: mariadb.service
         state: started
         enabled: yes
+
+    - name: change e-mail address for admin
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^ServerAdmin'
+        line: ServerAdmin localhost@localhost.net
+        owner: root
+        group: root
+        mode: 0644
+        state: present
+
+  handlers:
+    - name: restart httpd
+      ansible.builtin.service:
+        name: httpd
+        state: restarted
+        when: httpd.changed
 
 - hosts: db_servers
   become: yes
 
   tasks:
     - name: Install Samba package
-      tags: samba
       ansible.builtin.dnf:
         name: 
           - samba
@@ -75,12 +83,10 @@
         update_cache: yes
 
     - name: Reload systemd daemon
-      tags: always
       ansible.builtin.systemd_service:
         daemon_reload: yes
 
     - name: Start and enable samba service
-      tags: samba
       ansible.builtin.systemd_service:
         name: samba-bgqd.service
         state: started
