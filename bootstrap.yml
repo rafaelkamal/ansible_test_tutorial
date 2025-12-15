@@ -1,0 +1,33 @@
+---
+
+- hosts: all
+  become: yes
+  pre_tasks:
+
+    - name: Install updates
+      tags: always
+      ansible.builtin.dnf:
+        update_only: yes
+        update_cache: yes
+
+
+- hosts: all
+  become: yes
+  tasks:
+
+    - name: Create rafael user
+      ansible.builtin.user:
+        name: rafael
+        groups: root
+
+    - name: add ssh key for rafael
+      authorized_key:
+        user: rafael
+        key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEaQgmrpUDLYjViAHQnQUv08qPwrTmJ6Qk+BTKXxPAIc ansible"
+
+    - name: add sudoers file for rafael
+      ansible.builtin.copy:
+        src: sudoer_rafael
+        dest: /etc/sudoers.d/rafael
+        owner: root
+        group: root
