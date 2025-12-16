@@ -1,0 +1,20 @@
+- name: Ensure unzip is installed (Required for unzipping terraform)
+  ansible.builtin.dnf:
+    name: unzip
+    state: present
+
+- name: Download terraform archive
+  ansible.builtin.get_url:
+    url: https://releases.hashicorp.com/terraform/1.13.5/terraform_1.13.5_linux_amd64.zip
+    dest: /tmp/terraform_linux_amd64.zip
+    validate_certs: no
+    mode: 0644
+
+- name: Unzip terraform archive
+  unarchive:
+    src: /tmp/terraform_linux_amd64.zip
+    dest: /usr/local/bin/
+    remote_src: yes
+    mode: 0755
+    owner: root
+    group: root

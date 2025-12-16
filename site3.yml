@@ -1,0 +1,74 @@
+---
+
+- hosts: all
+  become: yes
+  pre_tasks:
+
+    - name: Update repo cache
+      tags: always
+      ansible.builtin.dnf:
+        update_cache: yes
+
+    - name: Install httpd package
+      tags: httpd
+      ansible.builtin.dnf:
+        name: httpd
+        state: present
+
+    - name: Start and enable httpd service
+      tags: httpd
+      ansible.builtin.service:
+        name: httpd
+        state: started
+        enabled: yes
+
+    - name: Ensure firewalld allows http traffic (optional if firewalld is active)
+      ansible.posix.firewalld:
+        service: http
+        permanent: true
+        state: enabled
+      notify: Reload firewalld
+
+    - name: Change e-mail address for admin
+      ansible.builtin.lineinfile:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: '^ServerAdmin'
+        line: ServerAdmin root@localhost.net
+        owner: root
+        group: root
+        mode: 0644
+        state: present
+      notify: Restart httpd
+
+  handlers:
+
+    - name: Reload firewalld
+      ansible.builtin.service:
+        name: firewalld
+        state: reloaded
+
+    - name: Restart httpd
+      ansible.builtin.service:
+        name: httpd
+        state: restarted
+
+
+- hosts: all
+  become: yes
+  roles:
+    - base
+
+- hosts: web_servers
+  become: yes
+  roles:
+    - web_servers
+
+- hosts: db_servers
+  become: yes
+  roles:
+    - db_servers
+
+- hosts: file_servers
+  become: yes
+  roles:
+    - file_servers

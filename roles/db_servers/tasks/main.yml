@@ -1,0 +1,19 @@
+- name: Install Samba package
+  tags: samba
+  ansible.builtin.dnf:
+    name:
+      - samba
+      - samba-common
+      - samba-client
+    state: present
+    update_cache: yes
+
+- name: Reload systemd daemon
+  ansible.builtin.systemd_service:
+    daemon_reload: yes
+
+- name: Start and enable samba service
+  ansible.builtin.systemd_service:
+    name: samba-bgqd.service
+    state: started
+    enabled: yes

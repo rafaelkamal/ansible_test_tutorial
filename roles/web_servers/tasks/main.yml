@@ -1,0 +1,15 @@
+- name: Install mariadb server
+  tags: mariadb
+  ansible.builtin.dnf:
+    name: mariadb-server
+    state: latest
+
+- name: Reload systemd daemon
+  ansible.builtin.systemd_service:
+    daemon_reload: yes
+
+- name: Start and enable MariaDB service
+  ansible.builtin.systemd_service:
+    name: mariadb.service
+    state: started
+    enabled: yes
