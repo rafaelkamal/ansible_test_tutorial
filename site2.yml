@@ -52,84 +52,32 @@
         name: httpd
         state: restarted
 
-
 - hosts: all
   become: yes
   tasks:
 
-    - name: add ssh key for rafael
+    - name: Add ssh key for rafael
       authorized_key:
         user: rafael
         key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEaQgmrpUDLYjViAHQnQUv08qPwrTmJ6Qk+BTKXxPAIc ansible"
 
 
+- hosts: all
+  become: yes
+  roles:
+    - base
+
 - hosts: web_servers
   become: yes
-  tasks:
-
-    - name: Install mariadb server
-      tags: mariadb
-      ansible.builtin.dnf:
-        name: mariadb-server
-        state: latest
-
-    - name: Reload systemd daemon
-      ansible.builtin.systemd_service:
-        daemon_reload: yes
-
-    - name: Start and enable MariaDB service
-      ansible.builtin.systemd_service:
-        name: mariadb.service
-        state: started
-        enabled: yes
-
+  roles:
+    - web_servers
 
 - hosts: db_servers
   become: yes
-  tasks:
-
-    - name: Install Samba package
-      tags: samba
-      ansible.builtin.dnf:
-        name:
-          - samba
-          - samba-common
-          - samba-client
-        state: present
-        update_cache: yes
-
-    - name: Reload systemd daemon
-      ansible.builtin.systemd_service:
-        daemon_reload: yes
-
-    - name: Start and enable samba service
-      ansible.builtin.systemd_service:
-        name: samba-bgqd.service
-        state: started
-        enabled: yes
-
+  roles:
+    - db_servers
 
 - hosts: file_servers
   become: yes
-  tasks:
-
-    - name: Ensure unzip is installed (Required for unzipping terraform)
-      ansible.builtin.dnf:
-        name: unzip
-        state: present
-
-    - name: Download terraform archive
-      ansible.builtin.get_url:
-        url: https://releases.hashicorp.com/terraform/1.13.5/terraform_1.13.5_linux_amd64.zip
-        dest: /tmp/terraform_linux_amd64.zip
-        validate_certs: no
-        mode: 0644
-
-    - name: Unzip terraform archive
-      unarchive:
-        src: /tmp/terraform_linux_amd64.zip
-        dest: /usr/local/bin/
-        remote_src: yes
-        mode: 0755
-        owner: root
-        group: root
+  roles:
+    - file_servers
